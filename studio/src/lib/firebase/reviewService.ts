@@ -122,3 +122,4 @@ export async function deleteReview(reviewId: string) {
     console.error('[ReviewService] Error deleting review:', error);
     return { success: false, error: (error as Error).message };
   }
+}
