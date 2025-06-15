@@ -15,8 +15,8 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,    // Using signInWithPopup
+  getRedirectResult,  // Kept for potential future use or other flows
   type User,
   type AuthError
 } from 'firebase/auth';
@@ -47,54 +47,69 @@ const isValidEmail = (email: string): boolean => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isProcessingRedirectState, setIsProcessingRedirectState] = useState(true); // Start as true
+  const [isProcessingRedirectState, setIsProcessingRedirectState] = useState(true); 
   const [isSettingUpNewProfile, setIsSettingUpNewProfile] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log(`[AuthContext] useEffect RUNS. isProcessingRedirectState (current): ${isProcessingRedirectState}`);
+    console.log(`[AuthContext] useEffect RUNS. isProcessingRedirectState (current): ${isProcessingRedirectState}. Current user in state: ${user ? user.uid : 'null'}`);
 
     const isProcessingRedirectListener = isProcessingRedirectState;
     console.log(`[AuthContext] useEffect: isProcessingRedirectListener (captured for onAuthStateChanged): ${isProcessingRedirectListener}`);
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log(`[AuthContext] onAuthStateChanged FIRED. User: ${currentUser ? currentUser.uid : 'null'}. isProcessingRedirectListener (captured by this listener): ${isProcessingRedirectListener}`);
+      console.log(`[AuthContext] onAuthStateChanged FIRED. User: ${currentUser ? currentUser.uid : 'null'}, DisplayName: ${currentUser?.displayName}. isProcessingRedirectListener (captured): ${isProcessingRedirectListener}`);
       setUser(currentUser);
+      
       if (!isProcessingRedirectListener) { 
         console.log("[AuthContext] onAuthStateChanged: isProcessingRedirectListener is false, setting setLoading(false).");
+        if (currentUser === null && loading) { // Check loading state before setting
+            console.warn("[AuthContext] WARNING: Setting loading to false while user is null, and not processing redirect. This might lead to login page redirect if not intended.");
+        }
         setLoading(false);
       } else {
-        console.log("[AuthContext] onAuthStateChanged: isProcessingRedirectListener is true, NOT setting setLoading(false) yet (waiting for redirect to finish).");
+        console.log("[AuthContext] onAuthStateChanged: isProcessingRedirectListener is true, NOT setting setLoading(false) yet (waiting for redirect to finish or popup to resolve).");
       }
     });
 
+    // This block now primarily handles signInWithRedirect if it were used.
+    // For signInWithPopup, getRedirectResult will typically be null unless a redirect was somehow still pending.
     if (isProcessingRedirectState) {
-      console.log("[AuthContext] useEffect: isProcessingRedirectState is true. Calling getRedirectResult...");
+      console.log("[AuthContext] useEffect: isProcessingRedirectState is true. Attempting getRedirectResult() (relevant for redirect flows)...");
       getRedirectResult(auth)
         .then((result) => {
-          console.log("[AuthContext] getRedirectResult: Successfully called. Result:", result ? { user: result.user?.uid, providerId: result.providerId } : null);
           if (result && result.user) {
-            console.log("[AuthContext] getRedirectResult: User found in result:", result.user?.uid, "Display Name:", result.user?.displayName);
+            console.log("[AuthContext] getRedirectResult SUCCESS (likely from a previous redirect attempt). User from result:", result.user?.uid);
+            // onAuthStateChanged will handle setting user and loading state.
           } else {
-            console.log("[AuthContext] getRedirectResult: No user in result or result is null.");
+            console.log("[AuthContext] getRedirectResult: No user in result or result is null. This is expected if not returning from a redirect or if using signInWithPopup.");
           }
         })
         .catch((error) => {
-          console.error("[AuthContext] getRedirectResult: Error processing redirect:", error);
+          console.error("[AuthContext] getRedirectResult ERROR:", error);
           handleAuthError(error as AuthError, "Google Sign-in (Redirect Result Processing)");
         })
         .finally(() => {
           console.log("[AuthContext] getRedirectResult.finally: Setting isProcessingRedirectState(false). This will re-run useEffect.");
           setIsProcessingRedirectState(false); 
         });
+    } else {
+        // If not processing redirect and loading is still true, onAuthStateChanged should take care of it.
+        // If user is already set by onAuthStateChanged and loading is true, this implies a potential state issue.
+        if (loading && user !== null) {
+             console.log(`[AuthContext] useEffect (path: !isProcessingRedirectState): loading is true, user is NOT null. This implies onAuthStateChanged may have already set the user but not setLoading. Setting setLoading(false).`);
+             setLoading(false);
+        } else if (loading && user === null) {
+            console.log(`[AuthContext] useEffect (path: !isProcessingRedirectState): loading is true, user is null. Waiting for onAuthStateChanged to finalize loading state.`);
+        }
     }
 
     return () => {
       console.log("[AuthContext] useEffect CLEANUP. Unsubscribing onAuthStateChanged.");
       unsubscribe();
     };
-  }, [isProcessingRedirectState]); 
+  }, [isProcessingRedirectState, router, user, loading]); // Added user and loading to dependency array for more robust state checks within useEffect
 
   const handleAuthError = (error: AuthError, action: "Sign-in" | "Sign-up" | "Guest Sign-in" | "Password Reset" | "Google Sign-in" | "Google Sign-in (Redirect Result Processing)" | "Username Registration") => {
     console.error(`[AuthContext] Error during ${action.toLowerCase()}:`, error.code, error.message);
@@ -131,9 +146,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         title = "Sign-in Cancelled or Interrupted";
         description = `The Google sign-in process was closed, cancelled, or could not be completed.
 If this was unexpected, please ensure:
-1. Pop-ups are allowed (though less relevant for redirect).
-2. Your OAuth configuration (Authorized Domains, Authorized JavaScript Origins, AND Authorized Redirect URIs) in Firebase Console and Google Cloud Console is correctly set up for THIS EXACT environment/URL.
-This is a common cause for redirect flows failing to complete. Original SDK error: ${error.message}`;
+1. Pop-ups are allowed for this site.
+2. Your OAuth configuration (Authorized Domains, Authorized JavaScript Origins) in Firebase Console and Google Cloud Console is correctly set up for THIS EXACT environment/URL.
+This is a common cause for popup/redirect flows failing to complete. Original SDK error: ${error.message}`;
         break;
       case 'auth/account-exists-with-different-credential':
         description = "An account already exists with this email address, but was created using a different sign-in method (e.g., password). Try signing in with that method.";
@@ -144,14 +159,13 @@ This is a common cause for redirect flows failing to complete. Original SDK erro
         description = `CRITICAL: This app's domain is not authorized for Google Sign-In.
 1. In Firebase Console > Authentication > Settings > Authorized domains: Add your app's domain (e.g., 'your-app-name.cloudworkstations.dev' - NO 'https://', NO port).
 2. In Google Cloud Console > APIs & Services > Credentials > Your OAuth 2.0 Client ID > Authorized JavaScript origins: Add your app's origin (e.g., 'https://your-app-name.cloudworkstations.dev' - WITH 'https://', NO port).
-3. Also for redirect, ensure the redirect URI (e.g., https://[YOUR_PROJECT_ID].firebaseapp.com/__/auth/handler AND your app's main origin) is in Google Cloud Console's OAuth Client "Authorized redirect URIs".
 This must exactly match the domain you are using. Original SDK error: ${error.message}`;
         break;
       default:
         console.warn(`[AuthContext] Unhandled Firebase Auth Error Code: ${error.code}`);
         if (action.startsWith("Google Sign-in") && error.message && (error.message.toLowerCase().includes("cancelled") || error.message.toLowerCase().includes("closed"))) {
             title = "Google Sign-in Interrupted";
-            description = `The Google sign-in process was interrupted or could not be completed. Error: ${error.message}. Please ensure your OAuth configuration (Authorized Domains, Origins, Redirect URIs) in Firebase and Google Cloud Console is correct for this environment.`;
+            description = `The Google sign-in process was interrupted or could not be completed. Error: ${error.message}. Please ensure your OAuth configuration (Authorized Domains, Origins) in Firebase and Google Cloud Console is correct for this environment.`;
         }
         break;
     }
@@ -172,6 +186,7 @@ This must exactly match the domain you are using. Original SDK error: ${error.me
       const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
       await setPersistence(auth, persistenceType);
       await authFunction();
+      // Successful sign-in will be handled by onAuthStateChanged
     } catch (error) {
       handleAuthError(error as AuthError, actionName);
     }
@@ -199,7 +214,7 @@ This must exactly match the domain you are using. Original SDK error: ${error.me
   };
 
   const signUpWithEmailPassword = async (email: string, pass: string, username: string, rememberMe: boolean = true) => {
-    setIsSettingUpNewProfile(false);
+    setIsSettingUpNewProfile(false); // Reset before attempt
 
     const lowerUsername = username.toLowerCase();
     const usernameCheck = await getEmailFromUsername(lowerUsername);
@@ -229,19 +244,25 @@ This must exactly match the domain you are using. Original SDK error: ${error.me
       await setPersistence(auth, persistenceType);
 
       const userCredential = await firebaseCreateUserWithEmailAndPassword(auth, email, pass);
-
-      let currentUser = auth.currentUser;
+      
+      // It's crucial that auth.currentUser reflects the new user before proceeding.
+      // Firebase typically updates this internally after userCredential is returned.
+      let currentUser = auth.currentUser; 
       if (!currentUser || currentUser.uid !== userCredential.user.uid) {
-        console.log("[AuthContext] signUp: Waiting for currentUser to update after creation...");
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log("[AuthContext] signUp: Waiting for auth.currentUser to update after creation...");
+        // This might not be strictly necessary if onAuthStateChanged fires quickly enough,
+        // but can be a safeguard if direct operations on currentUser are needed immediately.
+        await new Promise(resolve => setTimeout(resolve, 500)); // Short delay
         currentUser = auth.currentUser;
       }
-
+      
       if (currentUser) {
         setIsSettingUpNewProfile(true);
         console.log("[AuthContext] signUp: Updating profile for:", currentUser.uid, "with displayName:", username);
         await updateProfile(currentUser, { displayName: username });
 
+        // Force reload of user to ensure custom claims or profile updates are reflected if needed immediately
+        // Though for displayName, it's often available client-side without a full token refresh immediately.
         console.log("[AuthContext] signUp: Reloading user data for:", currentUser.uid);
         await currentUser.reload();
         currentUser = auth.currentUser; // Re-assign after reload
@@ -253,7 +274,7 @@ This must exactly match the domain you are using. Original SDK error: ${error.me
         console.log("[AuthContext] signUp: User reloaded. Current displayName:", currentUser.displayName);
 
         console.log("[AuthContext] signUp: Getting ID token for username registration, UID:", currentUser.uid);
-        const idTokenResult = await currentUser.getIdTokenResult(true);
+        const idTokenResult = await currentUser.getIdTokenResult(true); // Force refresh token
         const idToken = idTokenResult.token;
         console.log("[AuthContext] signUp: ID Token obtained. Proceeding with username registration.");
 
@@ -261,7 +282,7 @@ This must exactly match the domain you are using. Original SDK error: ${error.me
 
         if (usernameResult.success) {
           console.log("[AuthContext] signUp: Username registration successful.");
-          // Final token refresh to ensure client SDK is fully synchronized
+          // Final token refresh to ensure all backend changes (like potential custom claims from username creation) are reflected.
           try {
             console.log("[AuthContext] signUp: Performing final token refresh before completing profile setup sequence.");
             await currentUser.getIdToken(true); 
@@ -270,37 +291,52 @@ This must exactly match the domain you are using. Original SDK error: ${error.me
             console.warn("[AuthContext] signUp: Non-critical error during final token refresh:", finalTokenError);
           }
         } else {
+          // If username registration fails, the user account might still exist in Firebase Auth.
+          // Consider if you need to delete the user account here or handle it manually.
           handleAuthError({ name: "UsernameError", message: usernameResult.message } as unknown as AuthError, "Username Registration");
-          // Consider if you need to delete the Firebase user if username registration fails critically
         }
       } else {
-        console.error("[AuthContext] signUp: Critical - User object not available after creation.");
-        throw new Error("User object not available after creation. Cannot update profile or register username.");
+        console.error("[AuthContext] signUp: Critical - User object not available after creation or reload.");
+        throw new Error("User object not available after creation or reload. Cannot update profile or register username.");
       }
     } catch (error) {
       handleAuthError(error as AuthError, "Sign-up");
     } finally {
-      setIsSettingUpNewProfile(false);
+      setIsSettingUpNewProfile(false); // Ensure this is always reset
     }
   };
 
   const signInWithGoogle = async () => {
-    console.log("[AuthContext] Attempting Google Sign-In with redirect.");
+    console.log("[AuthContext] Attempting Google Sign-In with popup.");
+    // For signInWithPopup, getRedirectResult is not directly involved in its primary success path.
+    // So, we don't need to manage isProcessingRedirectState specifically for it, but the existing
+    // getRedirectResult logic will remain in useEffect for any pending redirect flows.
     try {
       const provider = new GoogleAuthProvider();
+      // It's good practice to set persistence before any sign-in operation.
+      // browserLocalPersistence is common for a "remember me" like experience.
       await setPersistence(auth, browserLocalPersistence); 
-      await signInWithRedirect(auth, provider);
+      console.log("[AuthContext] Persistence set to browserLocalPersistence for Google Sign-In with Popup.");
+      
+      const result = await signInWithPopup(auth, provider);
+      // If successful, onAuthStateChanged should fire and update the user state.
+      // setLoading(false) will be handled by onAuthStateChanged.
+      console.log("[AuthContext] signInWithPopup successful. User:", result.user?.uid);
+
     } catch (error) {
-      console.error("[AuthContext] Error initiating Google Sign-In redirect:", error);
+      console.error("[AuthContext] Error during Google Sign-In with popup:", error);
       handleAuthError(error as AuthError, "Google Sign-in");
-      setIsProcessingRedirectState(false); 
+      // If popup fails, ensure loading state isn't stuck if it was relying on onAuthStateChanged from a success.
+      // However, onAuthStateChanged should still fire with null if the sign-in ultimately failed to establish a user.
+      // So, direct setLoading(false) here might be redundant or premature.
     }
   };
 
   const signInAsGuest = async () => {
     try {
-      await setPersistence(auth, browserSessionPersistence);
+      await setPersistence(auth, browserSessionPersistence); // Guests are usually session-only
       await signInAnonymously(auth);
+      // onAuthStateChanged will handle user state and loading.
     } catch (error) {
       handleAuthError(error as AuthError, "Guest Sign-in");
     }
@@ -327,7 +363,9 @@ This must exactly match the domain you are using. Original SDK error: ${error.me
   const logout = async () => {
     try {
       await firebaseSignOut(auth);
-      router.push('/login'); 
+      // onAuthStateChanged will set user to null.
+      // setLoading(false) will be handled by onAuthStateChanged.
+      router.push('/login'); // Explicitly redirect to login after logout
       toast({ title: "Signed Out", description: "You have been successfully signed out."});
     } catch (error) {
       console.error("[AuthContext] logout: Error signing out:", error);
@@ -354,4 +392,4 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-    
+
