@@ -1,7 +1,8 @@
+
 // src/components/layout/Header.tsx
 'use client';
 
-import { LogIn, LogOut, UserCircle, User } from 'lucide-react'; 
+import { LogIn, LogOut, UserCircle, User, Info } from 'lucide-react'; 
 import { ThemeToggleButton } from '@/components/theme/theme-toggle-button';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -28,13 +29,25 @@ export function Header() {
             src="/rasika-logo.png" 
             alt="Rasika Logo"
             width={144} 
- height={168}
- className="h-24 w-24 mr-2 mix-blend-multiply dark:mix-blend-normal"
+            height={168}
+            className="h-24 w-24 mr-2 mix-blend-multiply dark:mix-blend-normal"
             priority 
           />
           <h1 className="text-4xl font-headline text-primary">Rasika</h1>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Button asChild variant="ghost" size="sm" className="hidden sm:flex text-sm px-3 py-1.5 h-auto">
+            <Link href="/about" className="flex items-center">
+              <Info className="mr-1.5 h-4 w-4" /> About
+            </Link>
+          </Button>
+          {/* Icon-only button for mobile, visible button for larger screens is above */}
+          <Button asChild variant="ghost" size="icon" className="sm:hidden h-9 w-9">
+            <Link href="/about" aria-label="About Rasika">
+              <Info className="h-5 w-5" />
+            </Link>
+          </Button>
+
           <ThemeToggleButton />
           {loading ? (
             <Skeleton className="h-10 w-24" />
