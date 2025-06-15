@@ -19,8 +19,8 @@
     --muted-foreground: 40 15% 55%;
     --accent: 15 80% 65%;
     --accent-foreground: 15 80% 15%;
-    --destructive: 0 75% 50%; /* Adjusted for better visibility */
-    --destructive-foreground: 0 0% 98%; /* Kept light for contrast on darker destructive bg */
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 98%;
     --border: 200 30% 85%;
     --input: 200 25% 94%;
     --ring: 205 70% 45%;
@@ -37,7 +37,7 @@
   }
 
   .dark {
-    /* Default Dark Theme (These values are taken from your previous globals.css) */
+    /* Default Dark Theme */
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
     --card: 240 10% 3.9%;
@@ -52,8 +52,8 @@
     --muted-foreground: 240 5% 64.9%;
     --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 60% 45%; /* Adjusted for better visibility in dark mode */
-    --destructive-foreground: 0 0% 98%; /* Kept light for contrast on darker destructive bg */
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
@@ -80,28 +80,19 @@
 }
 
 /* Mood-based theme classes */
+/* Moods now primarily affect primary, secondary, accent colors, inheriting others */
 
 .theme-happy {
-  --background: 45 100% 96%;
-  --foreground: 30 70% 25%;
-  --card: 40 100% 99%;
-  --card-foreground: 30 70% 25%;
-  --popover: 40 100% 99%;
-  --popover-foreground: 30 70% 25%;
-  --primary: 35 100% 60%;
-  --primary-foreground: 30 100% 10%;
-  --secondary: 50 80% 85%;
-  --secondary-foreground: 40 70% 30%;
-  --muted: 45 60% 94%;
-  --muted-foreground: 40 30% 50%;
-  --accent: 180 70% 55%;
-  --accent-foreground: 180 100% 10%;
-  /* Destructive colors will be inherited from :root or .dark */
-  --border: 35 80% 88%;
-  --input: 40 80% 97%;
+  /* Inherits: background, foreground, card, card-foreground, popover, popover-foreground, muted, muted-foreground, border, input */
+  --primary: 35 100% 60%;   /* Bright orange */
+  --primary-foreground: 30 100% 10%; /* Dark text for bright primary */
+  --secondary: 50 80% 85%;   /* Lighter yellow */
+  --secondary-foreground: 40 70% 30%; /* Darker text for light secondary */
+  --accent: 180 70% 55%;   /* Contrasting cyan */
+  --accent-foreground: 180 100% 10%; /* Dark text for cyan accent */
   --ring: 35 100% 50%;
 
-  /* Sidebar Colors (using happy mood values) */
+  /* Sidebar Colors (will use inherited background/foreground) */
   --sidebar-background: var(--background);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -113,26 +104,16 @@
 }
 
 .theme-calm {
-  --background: 190 60% 97%;
-  --foreground: 200 30% 30%;
-  --card: 195 50% 100%;
-  --card-foreground: 200 30% 30%;
-  --popover: 195 50% 100%;
-  --popover-foreground: 200 30% 30%;
-  --primary: 180 55% 60%;
-  --primary-foreground: 180 100% 10%;
-  --secondary: 200 40% 92%;
+  /* Inherits: background, foreground, card, card-foreground, popover, popover-foreground, muted, muted-foreground, border, input */
+  --primary: 180 55% 60%;   /* Soft teal */
+  --primary-foreground: 180 100% 10%; /* Dark teal for text */
+  --secondary: 200 40% 92%;   /* Light blue-gray */
   --secondary-foreground: 200 30% 40%;
-  --muted: 210 30% 96%;
-  --muted-foreground: 210 20% 55%;
-  --accent: 220 50% 70%;
+  --accent: 220 50% 70%;   /* Soft lavender */
   --accent-foreground: 220 100% 15%;
-  /* Destructive colors will be inherited from :root or .dark */
-  --border: 200 35% 88%;
-  --input: 200 40% 97%;
   --ring: 180 55% 50%;
 
-  /* Sidebar Colors (using calm mood values) */
+  /* Sidebar Colors (will use inherited background/foreground) */
   --sidebar-background: var(--background);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -144,26 +125,16 @@
 }
 
 .theme-excited {
-  --background: 330 100% 97%;
-  --foreground: 340 60% 25%;
-  --card: 335 100% 99%;
-  --card-foreground: 340 60% 25%;
-  --popover: 335 100% 99%;
-  --popover-foreground: 340 60% 25%;
-  --primary: 325 100% 60%;
+  /* Inherits: background, foreground, card, card-foreground, popover, popover-foreground, muted, muted-foreground, border, input */
+  --primary: 325 100% 60%;   /* Vibrant pink */
   --primary-foreground: 330 100% 10%;
-  --secondary: 340 90% 88%;
+  --secondary: 340 90% 88%;   /* Lighter pink */
   --secondary-foreground: 330 70% 40%;
-  --muted: 330 70% 95%;
-  --muted-foreground: 330 40% 55%;
-  --accent: 45 100% 55%;
+  --accent: 45 100% 55%;    /* Bright gold/yellow */
   --accent-foreground: 45 100% 10%;
-  /* Destructive colors will be inherited from :root or .dark */
-  --border: 330 80% 90%;
-  --input: 330 80% 98%;
   --ring: 325 100% 50%;
 
-  /* Sidebar Colors (using excited mood values) */
+  /* Sidebar Colors (will use inherited background/foreground) */
   --sidebar-background: var(--background);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -175,26 +146,16 @@
 }
 
 .theme-energetic {
-  --background: 15 100% 96%;
-  --foreground: 0 70% 30%;
-  --card: 10 100% 99%;
-  --card-foreground: 0 70% 30%;
-  --popover: 10 100% 99%;
-  --popover-foreground: 0 70% 30%;
-  --primary: 0 85% 70%;
-  --primary-foreground: 0 100% 10%;
-  --secondary: 20 90% 85%;
+  /* Inherits: background, foreground, card, card-foreground, popover, popover-foreground, muted, muted-foreground, border, input */
+  --primary: 0 85% 70%;     /* Lighter red */
+  --primary-foreground: 0 100% 10%; /* Dark text for contrast */
+  --secondary: 20 90% 85%;    /* Lighter orange */
   --secondary-foreground: 10 70% 40%;
-  --muted: 15 60% 94%;
-  --muted-foreground: 10 30% 50%;
-  --accent: 205 100% 55%;
+  --accent: 205 100% 55%;  /* Electric blue */
   --accent-foreground: 205 100% 10%;
-  /* Destructive colors will be inherited from :root or .dark */
-  --border: 10 80% 88%;
-  --input: 15 80% 97%;
   --ring: 0 85% 60%;
 
-  /* Sidebar Colors (using energetic mood values) */
+  /* Sidebar Colors (will use inherited background/foreground) */
   --sidebar-background: var(--background);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -206,26 +167,16 @@
 }
 
 .theme-thoughtful {
-  --background: 220 40% 96%;
-  --foreground: 230 25% 25%;
-  --card: 225 30% 99%;
-  --card-foreground: 230 25% 25%;
-  --popover: 225 30% 99%;
-  --popover-foreground: 230 25% 25%;
-  --primary: 230 50% 60%;
+  /* Inherits: background, foreground, card, card-foreground, popover, popover-foreground, muted, muted-foreground, border, input */
+  --primary: 230 50% 60%;   /* Muted indigo */
   --primary-foreground: 230 100% 10%;
-  --secondary: 210 35% 90%;
+  --secondary: 210 35% 90%;   /* Softer blue-gray */
   --secondary-foreground: 220 25% 40%;
-  --muted: 220 25% 94%;
-  --muted-foreground: 220 15% 55%;
-  --accent: 160 35% 60%;
+  --accent: 160 35% 60%;   /* Muted seafoam green */
   --accent-foreground: 160 100% 10%;
-  /* Destructive colors will be inherited from :root or .dark */
-  --border: 220 30% 88%;
-  --input: 220 30% 97%;
   --ring: 230 50% 50%;
 
-  /* Sidebar Colors (using thoughtful mood values) */
+  /* Sidebar Colors (will use inherited background/foreground) */
   --sidebar-background: var(--background);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
@@ -237,26 +188,16 @@
 }
 
 .theme-melancholy {
-  --background: 230 20% 95%;
-  --foreground: 220 25% 30%;
-  --card: 235 15% 98%;
-  --card-foreground: 220 25% 30%;
-  --popover: 235 15% 98%;
-  --popover-foreground: 220 25% 30%;
-  --primary: 240 30% 58%;
-  --primary-foreground: 240 100% 95%;
-  --secondary: 225 20% 88%;
+  /* Inherits: background, foreground, card, card-foreground, popover, popover-foreground, muted, muted-foreground, border, input */
+  --primary: 240 30% 58%;   /* Muted deep blue */
+  --primary-foreground: 240 100% 95%; /* Light text for contrast */
+  --secondary: 225 20% 88%;   /* Softer gray-blue */
   --secondary-foreground: 230 20% 40%;
-  --muted: 230 15% 93%;
-  --muted-foreground: 230 10% 50%;
-  --accent: 270 25% 65%;
+  --accent: 270 25% 65%;   /* Muted lavender/purple */
   --accent-foreground: 270 100% 15%;
-  /* Destructive colors will be inherited from :root or .dark */
-  --border: 230 20% 85%;
-  --input: 230 20% 96%;
   --ring: 240 30% 48%;
 
-  /* Sidebar Colors (using melancholy mood values) */
+  /* Sidebar Colors (will use inherited background/foreground) */
   --sidebar-background: var(--background);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
