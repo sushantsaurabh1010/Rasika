@@ -1,7 +1,16 @@
-# Settings to manage and configure a Firebase App Hosting backend.
-# https://firebase.google.com/docs/app-hosting/configure
+runtime: nodejs20
 
-runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+platform: gcfv2
+
+entry:
+  file: "next.config.ts"
+
+framework:
+  type: nextjs
+
+regions:
+  - asia-east1
+
+build:
+  command: npm run build
+  dir: studio
